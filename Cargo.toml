@@ -1,9 +1,9 @@
 [package]
-name = "loading_rs"
+name = "throbber"
 version = "0.1.0"
-authors = ["thomas"]
+authors = ["Thomas Lindae <thomas.lindae@in.tum.de>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "Display a throbber animation in the terminal."
+license = "MIT"
 
 [dependencies]
