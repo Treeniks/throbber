@@ -1,3 +1,12 @@
+//! This crate serves as an alternative to [loading](https://crates.io/crates/loading). It is used to display a loading style animation in the terminal while other calculations are done in the main program.
+//!
+//! # Usage
+//! First, add this to your Cargo.toml
+//! ```toml
+//! [dependencies]
+//! loading_rs = "0.1"
+//! ```
+
 use std::io::Write;
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::thread::{self, JoinHandle};
@@ -17,6 +26,9 @@ pub const MOVE_MIN_LONG_F: [&str; 10] = [
     "[ --  ]", "[--   ]",
 ];
 
+/// Representation of a loading animation. It can strart, succeed, fail or end at any point.
+///
+/// Note that a call to `end()` takes ownership of the struct and drops it, as such it should be called to completely remove the loading animtion object. If you want to start another animation afterwards, you have to create a new `Loading` object. This is done because multiple calls to start do not actually create multiple threads, instead a call to a *finish function* (like `succeed()`) simply parks the thread and a following `start()` call unparks that thread again. As such, a call to `end()` kills the thread entirely. If you want to just stop the animation, but potentially start it again later on, use `finish()` instead.
 pub struct Loading {
     anim: Option<LoadingAnim>,
     message: String,
@@ -24,77 +36,20 @@ pub struct Loading {
     frames: &'static [&'static str],
 }
 
+struct LoadingAnim {
+    thread: JoinHandle<()>,
+    sender: Sender<LoadingSignal>,
+}
+
 enum LoadingSignal {
     Start,
+    Finish,
     Succ(String),
     Fail(String),
     ChMsg(String),
     ChInt(Duration),
     ChFrames(&'static [&'static str]),
     End,
-}
-
-struct LoadingAnim {
-    thread: JoinHandle<()>,
-    sender: Sender<LoadingSignal>,
-}
-
-fn animation_thread(
-    receiver: Receiver<LoadingSignal>,
-    mut msg: String,
-    mut frames: &'static [&'static str],
-    mut interval: Duration,
-) {
-    let mut play_anim = true;
-    let mut frame = 0;
-    loop {
-        match receiver.try_recv() {
-            Ok(LoadingSignal::Start) => {
-                play_anim = true;
-                continue;
-            }
-            Ok(LoadingSignal::Succ(succ_msg)) => {
-                println!("\x1B[2K\r✔ {}", succ_msg);
-                play_anim = false;
-                continue;
-            }
-            Ok(LoadingSignal::Fail(fail_msg)) => {
-                println!("\x1B[2K\r✖ {}", fail_msg);
-                play_anim = false;
-                continue;
-            }
-            Ok(LoadingSignal::ChMsg(new_msg)) => {
-                msg = new_msg;
-                continue;
-            }
-            Ok(LoadingSignal::ChInt(new_dur)) => {
-                interval = new_dur;
-                continue;
-            }
-            Ok(LoadingSignal::ChFrames(new_frames)) => {
-                frames = new_frames;
-                frame = 0;
-                continue;
-            }
-            Ok(LoadingSignal::End) => {
-                break;
-            }
-            Err(TryRecvError::Disconnected) => {
-                break;
-            }
-            Err(TryRecvError::Empty) => {
-                if play_anim == false {
-                    thread::park();
-                    continue;
-                }
-            }
-        }
-        print!("\x1B[2K\r");
-        print!("{} {}", frames[frame], msg);
-        std::io::stdout().flush().unwrap();
-        thread::sleep(interval);
-        frame = (frame + 1) % frames.len();
-    }
 }
 
 impl Loading {
@@ -168,6 +123,13 @@ impl Loading {
         self.start();
     }
 
+    pub fn finish(&mut self) {
+        if let Some(ref anim) = self.anim {
+            anim.sender.send(LoadingSignal::Finish).unwrap();
+            anim.thread.thread().unpark();
+        }
+    }
+
     pub fn success(&mut self, msg: String) {
         if let Some(ref anim) = self.anim {
             anim.sender.send(LoadingSignal::Succ(msg)).unwrap();
@@ -186,12 +148,75 @@ impl Loading {
         }
     }
 
-    pub fn end(&mut self) -> thread::Result<()> {
+    pub fn end(mut self) {
         if let Some(anim) = self.anim.take() {
             anim.sender.send(LoadingSignal::End).unwrap();
             anim.thread.thread().unpark();
-            anim.thread.join()?;
+            anim.thread.join().unwrap();
         }
-        Ok(())
+    }
+}
+
+fn animation_thread(
+    receiver: Receiver<LoadingSignal>,
+    mut msg: String,
+    mut frames: &'static [&'static str],
+    mut interval: Duration,
+) {
+    let mut play_anim = true;
+    let mut frame = 0;
+    loop {
+        match receiver.try_recv() {
+            Ok(LoadingSignal::Start) => {
+                play_anim = true;
+                continue;
+            }
+            Ok(LoadingSignal::Finish) => {
+                print!("\x1B[2K\r");
+                std::io::stdout().flush().unwrap();
+                play_anim = false;
+                continue;
+            }
+            Ok(LoadingSignal::Succ(succ_msg)) => {
+                println!("\x1B[2K\r✔ {}", succ_msg);
+                play_anim = false;
+                continue;
+            }
+            Ok(LoadingSignal::Fail(fail_msg)) => {
+                println!("\x1B[2K\r✖ {}", fail_msg);
+                play_anim = false;
+                continue;
+            }
+            Ok(LoadingSignal::ChMsg(new_msg)) => {
+                msg = new_msg;
+                continue;
+            }
+            Ok(LoadingSignal::ChInt(new_dur)) => {
+                interval = new_dur;
+                continue;
+            }
+            Ok(LoadingSignal::ChFrames(new_frames)) => {
+                frames = new_frames;
+                frame = 0;
+                continue;
+            }
+            Ok(LoadingSignal::End) => {
+                break;
+            }
+            Err(TryRecvError::Disconnected) => {
+                break;
+            }
+            Err(TryRecvError::Empty) => {
+                if play_anim == false {
+                    thread::park();
+                    continue;
+                }
+            }
+        }
+        print!("\x1B[2K\r");
+        print!("{} {}", frames[frame], msg);
+        std::io::stdout().flush().unwrap();
+        thread::sleep(interval);
+        frame = (frame + 1) % frames.len();
     }
 }
