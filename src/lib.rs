@@ -20,7 +20,7 @@ pub const MOVE_MIN_LONG_F: [&str; 10] = [
 pub struct Loading {
     anim: Option<LoadingAnim>,
     message: String,
-    duration: Duration,
+    interval: Duration,
     frames: &'static [&'static str],
 }
 
@@ -29,7 +29,7 @@ enum LoadingSignal {
     Succ(String),
     Fail(String),
     ChMsg(String),
-    ChDur(Duration),
+    ChInt(Duration),
     ChFrames(&'static [&'static str]),
     End,
 }
@@ -43,7 +43,7 @@ fn animation_thread(
     receiver: Receiver<LoadingSignal>,
     mut msg: String,
     mut frames: &'static [&'static str],
-    mut duration: Duration,
+    mut interval: Duration,
 ) {
     let mut play_anim = true;
     let mut frame = 0;
@@ -67,8 +67,8 @@ fn animation_thread(
                 msg = new_msg;
                 continue;
             }
-            Ok(LoadingSignal::ChDur(new_dur)) => {
-                duration = new_dur;
+            Ok(LoadingSignal::ChInt(new_dur)) => {
+                interval = new_dur;
                 continue;
             }
             Ok(LoadingSignal::ChFrames(new_frames)) => {
@@ -92,7 +92,7 @@ fn animation_thread(
         print!("\x1B[2K\r");
         print!("{} {}", frames[frame], msg);
         std::io::stdout().flush().unwrap();
-        thread::sleep(duration);
+        thread::sleep(interval);
         frame = (frame + 1) % frames.len();
     }
 }
@@ -102,7 +102,7 @@ impl Loading {
         Self {
             anim: None,
             message: "".to_string(),
-            duration: Duration::from_millis(200),
+            interval: Duration::from_millis(200),
             frames: &DEFAULT_F,
         }
     }
@@ -112,8 +112,8 @@ impl Loading {
         self
     }
 
-    pub fn duration(mut self, duration: Duration) -> Self {
-        self.duration = duration;
+    pub fn interval(mut self, interval: Duration) -> Self {
+        self.interval = interval;
         self
     }
 
@@ -130,12 +130,12 @@ impl Loading {
         self.message = msg;
     }
 
-    pub fn change_duration(&mut self, duration: Duration) {
+    pub fn change_interval(&mut self, interval: Duration) {
         if let Some(ref anim) = self.anim {
-            anim.sender.send(LoadingSignal::ChDur(duration)).unwrap();
+            anim.sender.send(LoadingSignal::ChInt(interval)).unwrap();
             anim.thread.thread().unpark();
         }
-        self.duration = duration;
+        self.interval = interval;
     }
 
     pub fn change_frames(&mut self, frames: &'static [&'static str]) {
@@ -157,8 +157,8 @@ impl Loading {
 
         let msg = self.message.clone();
         let frames = self.frames;
-        let duration = self.duration;
-        let thread = thread::spawn(move || animation_thread(receiver, msg, frames, duration));
+        let interval = self.interval;
+        let thread = thread::spawn(move || animation_thread(receiver, msg, frames, interval));
 
         self.anim = Some(LoadingAnim { thread, sender });
     }
