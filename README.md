@@ -2,6 +2,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/throbber?style=flat-square)](https://crates.io/crates/throbber)
 [![docs.rs](https://img.shields.io/docsrs/throbber?style=flat-square)](https://docs.rs/throbber)
+[![GitHub last commit](https://img.shields.io/github/last-commit/Treeniks/throbber?style=flat-square)](https://github.com/Treeniks/throbber)
 
 This crate serves as an alternative to [loading](https://crates.io/crates/loading). It is used to display a throbber animation in the terminal while other calculations are done in the main program.
 
