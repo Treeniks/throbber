@@ -378,9 +378,13 @@ fn animation_thread(
                 continue;
             }
             Ok(ThrobberSignal::End) => {
+                print!("\x1B[2K\r");
+                std::io::stdout().flush().unwrap();
                 break;
             }
             Err(TryRecvError::Disconnected) => {
+                print!("\x1B[2K\r");
+                std::io::stdout().flush().unwrap();
                 break;
             }
             Err(TryRecvError::Empty) => {
