@@ -1,8 +1,9 @@
-//! This crate serves as an alternative to [loading](https://crates.io/crates/loading). It is used to display a throbber animation in the terminal while other calculations are done in the main program.
+//! [![Crates.io](https://img.shields.io/crates/v/throbber)](https://crates.io/crates/throbber)
+//! [![docs.rs](https://docs.rs/throbber/badge.svg)](https://docs.rs/throbber)
+//! [![GitHub last commit](https://img.shields.io/github/last-commit/Treeniks/throbber)](https://github.com/Treeniks/throbber)
+//! [![License](https://img.shields.io/github/license/Treeniks/throbber)](https://github.com/Treeniks/throbber/blob/master/LICENSE)
 //!
-//! [![Crates.io](https://img.shields.io/crates/v/throbber?style=flat-square)](https://crates.io/crates/throbber)
-//! [![docs.rs](https://img.shields.io/docsrs/throbber?style=flat-square)](https://docs.rs/throbber)
-//! [![GitHub last commit](https://img.shields.io/github/last-commit/Treeniks/throbber?style=flat-square)](https://github.com/Treeniks/throbber)
+//! This crate serves as an alternative to [loading](https://crates.io/crates/loading). It is used to display a throbber animation in the terminal while other calculations are done in the main program.
 //!
 //! ![Throbber Preview](https://user-images.githubusercontent.com/56131826/109326392-68c28b00-7857-11eb-8e8d-dd576c868e7f.gif "Throbber Preview")
 //!
@@ -15,7 +16,7 @@
 //! throbber = "0.1"
 //! ```
 //!
-//! To display a throbber animation, first create a Throbber object:
+//! To display a throbber animation, first create a [`Throbber`](Throbber) object:
 //!
 //! ```rust
 //! # use throbber::Throbber;
@@ -32,7 +33,7 @@
 //!                                    // see the Constants section
 //! ```
 //!
-//! Then you can simply call `start()` wherever you want to start the animation and a *finish function* like `success()` where you want to stop it.
+//! Then you can simply call [`start`](Throbber::start) wherever you want to start the animation and a *finish function* like [`success`](Throbber::success) where you want to stop it.
 //!
 //! ```rust
 //! # use throbber::Throbber;
@@ -42,10 +43,10 @@
 //! throbber.success("calculations successful!".to_string());
 //! ```
 //!
-//! After which you can call `start()` or `start_with_msg(String)` again to start the animation again.
-//! You can also change everything you could customize during the Throbber object creation, e. g. with `change_message(String)` and `change_frames(String)`. This also works while an animation is running.
+//! After which you can call [`start`](Throbber::start) or [`start_with_msg`](Throbber::start_with_msg) again to start the animation again.
+//! You can also change everything you could customize during the Throbber object creation, e. g. with [`change_message`](Throbber::change_message) and [`change_frames`](Throbber::change_frames). This also works while an animation is running.
 //!
-//! If you don't intend to start another animation, you should drop the Throbber object with `end()`. This action also ends the underlying thread:
+//! If you don't intend to start another animation, you should drop the Throbber object with [`end`](Throbber::end). This action also ends the underlying thread:
 //!
 //! ```rust
 //! # use throbber::Throbber;
@@ -79,7 +80,7 @@
 //! }
 //! ```
 //!
-//! You can also keep track of progress with `change_message(String)`:
+//! You can also keep track of progress with [`change_message`](Throbber::change_message):
 //!
 //! ```rust
 //! use std::thread;
@@ -140,7 +141,7 @@ pub const MOVE_MIN_LONG_F: [&str; 10] = [
 
 /// Representation of a throbber animation. It can start, succeed, fail or end at any point.
 ///
-/// Note that a call to `end()` takes ownership of the struct and drops it, as such it should be called to completely remove the throbber animtion object. If you want to start another animation afterwards, you have to create a new `Throbber` object. This is done because multiple calls to start do not actually create multiple threads, instead a call to a *finish function* (like `succeed()`) simply parks the thread and a following `start()` call unparks that thread again. As such, a call to `end()` kills the thread entirely. If you want to just stop the animation, but potentially start it again later on, use `finish()` instead.
+/// Note that a call to [`end`](Throbber::end) takes ownership of the struct and drops it, as such it should be called to completely remove the throbber animtion object. If you want to start another animation afterwards, you have to create a new [`Throbber`](Throbber) object. This is done because multiple calls to start do not actually create multiple threads, instead a call to a *finish function* (like [`success`](Throbber::success)) simply parks the thread and a following [`start`](Throbber::start) call unparks that thread again. As such, a call to [`end`](Throbber::end) kills the thread entirely. If you want to just stop the animation, but potentially start it again later on, use [`finish`](Throbber::finish) instead.
 ///
 /// # Examples
 ///
@@ -207,7 +208,7 @@ impl Throbber {
 
     /// Sets the message that's supposed to print.
     ///
-    /// This does nothing if `start()` was called before. To change the message after `start()` was called, use [`change_message`](Throbber::change_message) instead.
+    /// This does nothing if [`start`](Throbber::start) was called before. To change the message after [`start`](Throbber::start) was called, use [`change_message`](Throbber::change_message) instead.
     pub fn message(mut self, msg: String) -> Self {
         self.message = msg;
         self
@@ -215,7 +216,7 @@ impl Throbber {
 
     /// Sets the interval in which the animation frames are supposed to print.
     ///
-    /// This does nothing if `start()` was called before. To change the interval after `start()` was called, use [`change_interval`](Throbber::change_interval) instead.
+    /// This does nothing if [`start`](Throbber::start) was called before. To change the interval after [`start`](Throbber::start) was called, use [`change_interval`](Throbber::change_interval) instead.
     pub fn interval(mut self, interval: Duration) -> Self {
         self.interval = interval;
         self
@@ -223,7 +224,7 @@ impl Throbber {
 
     /// Sets the animation frames that are supposed to print.
     ///
-    /// This does nothing if `start()` was called before. To change the animation frames after `start()` was called, use [`change_frames`](Throbber::change_frames) instead.
+    /// This does nothing if [`start`](Throbber::start) was called before. To change the animation frames after [`start`](Throbber::start) was called, use [`change_frames`](Throbber::change_frames) instead.
     pub fn frames(mut self, frames: &'static [&'static str]) -> Self {
         self.frames = frames;
         self
@@ -231,7 +232,7 @@ impl Throbber {
 
     /// Changes the message that's supposed to print.toml
     ///
-    /// Unlike [`message`](Throbber::message), this will work both before and after `start()` was called.
+    /// Unlike [`message`](Throbber::message), this will work both before and after [`start`](Throbber::start) was called.
     pub fn change_message(&mut self, msg: String) {
         if let Some(ref anim) = self.anim {
             anim.sender
@@ -244,7 +245,7 @@ impl Throbber {
 
     /// Changes the interval in which the animation frames are supposed to print.
     ///
-    /// Unlike [`interval`](Throbber::interval), this will work both before and after `start()` was called.
+    /// Unlike [`interval`](Throbber::interval), this will work both before and after [`start`](Throbber::start) was called.
     pub fn change_interval(&mut self, interval: Duration) {
         if let Some(ref anim) = self.anim {
             anim.sender.send(ThrobberSignal::ChInt(interval)).unwrap();
@@ -255,7 +256,7 @@ impl Throbber {
 
     /// Changes the animation frames that are supposed to print.
     ///
-    /// Unlike [`frames`](Throbber::frames), this will work both before and after `start()` was called.
+    /// Unlike [`frames`](Throbber::frames), this will work both before and after [`start`](Throbber::start) was called.
     pub fn change_frames(&mut self, frames: &'static [&'static str]) {
         if let Some(ref anim) = self.anim {
             anim.sender.send(ThrobberSignal::ChFrames(frames)).unwrap();
@@ -266,7 +267,7 @@ impl Throbber {
 
     /// Starts the animation.
     ///
-    /// If this is the first call to start(), a new thread gets created to play the animation. Otherwise the thread that already exists gets unparked and starts the animation again.
+    /// If this is the first call to [`start`](Throbber::start), a new thread gets created to play the animation. Otherwise the thread that already exists gets unparked and starts the animation again.
     pub fn start(&mut self) {
         if let Some(ref anim) = self.anim {
             anim.sender.send(ThrobberSignal::Start).unwrap();
@@ -323,7 +324,7 @@ impl Throbber {
         }
     }
 
-    /// Encds the animation thread and drops the throbber object. If you want to stop the animation without dropping the throbber object, use [`finish`](Throbber::finish) instead.
+    /// Ends the animation thread and drops the throbber object. If you want to stop the animation without dropping the throbber object, use [`finish`](Throbber::finish) instead.
     pub fn end(mut self) {
         if let Some(anim) = self.anim.take() {
             anim.sender.send(ThrobberSignal::End).unwrap();

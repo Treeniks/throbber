@@ -1,8 +1,9 @@
 # Throbber
 
-[![Crates.io](https://img.shields.io/crates/v/throbber?style=flat-square)](https://crates.io/crates/throbber)
-[![docs.rs](https://img.shields.io/docsrs/throbber?style=flat-square)](https://docs.rs/throbber)
-[![GitHub last commit](https://img.shields.io/github/last-commit/Treeniks/throbber?style=flat-square)](https://github.com/Treeniks/throbber)
+[![Crates.io](https://img.shields.io/crates/v/throbber)](https://crates.io/crates/throbber)
+[![docs.rs](https://docs.rs/throbber/badge.svg)](https://docs.rs/throbber)
+[![GitHub last commit](https://img.shields.io/github/last-commit/Treeniks/throbber)](https://github.com/Treeniks/throbber)
+[![License](https://img.shields.io/github/license/Treeniks/throbber)](https://github.com/Treeniks/throbber/blob/master/LICENSE)
 
 This crate serves as an alternative to [loading](https://crates.io/crates/loading). It is used to display a throbber animation in the terminal while other calculations are done in the main program.
 
@@ -17,7 +18,7 @@ Add this to your Cargo.toml:
 throbber = "0.1"
 ```
 
-To display a throbber animation, first create a Throbber object:
+To display a throbber animation, first create a [`Throbber`](https://docs.rs/throbber/*/throbber/struct.Throbber.html) object:
 
 ```rust
 let mut throbber = Throbber::new();
@@ -32,7 +33,7 @@ let mut throbber = Throbber::new()
                                    // see the Constants section
 ```
 
-Then you can simply call `start()` wherever you want to start the animation and a *finish function* like `success()` where you want to stop it.
+Then you can simply call [`start`](https://docs.rs/throbber/*/throbber/struct.Throbber.html#method.start) wherever you want to start the animation and a *finish function* like [`success`](https://docs.rs/throbber/*/throbber/struct.Throbber.html#method.success) where you want to stop it.
 
 ```rust
 throbber.start();
@@ -40,10 +41,10 @@ throbber.start();
 throbber.success("calculations successful!".to_string());
 ```
 
-After which you can call `start()` or `start_with_msg(String)` again to start the animation again.
-You can also change everything you could customize during the Throbber object creation, e. g. with `change_message(String)` and `change_frames(String)`. This also works while an animation is running.
+After which you can call [`start`](https://docs.rs/throbber/*/throbber/struct.Throbber.html#method.start) or [`start_with_msg`](https://docs.rs/throbber/*/throbber/struct.Throbber.html#method.start_with_msg) again to start the animation again.
+You can also change everything you could customize during the Throbber object creation, e. g. with [`change_message`](https://docs.rs/throbber/*/throbber/struct.Throbber.html#method.change_message) and [`change_frames`](https://docs.rs/throbber/*/throbber/struct.Throbber.html#method.change_frames). This also works while an animation is running.
 
-If you don't intend to start another animation, you should drop the Throbber object with `end()`. This action also ends the underlying thread:
+If you don't intend to start another animation, you should drop the Throbber object with [`end`](https://docs.rs/throbber/*/throbber/struct.Throbber.html#method.end). This action also ends the underlying thread:
 
 ```rust
 throbber.end();
@@ -75,7 +76,7 @@ fn main() {
 }
 ```
 
-You can also keep track of progress with `change_message(String)`. This can be run with `cargo run --example download`:
+You can also keep track of progress with [`change_message`](https://docs.rs/throbber/*/throbber/struct.Throbber.html#method.change_message). This can be run with `cargo run --example download`:
 
 ```rust
 use std::thread;
