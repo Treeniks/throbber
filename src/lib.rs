@@ -163,7 +163,6 @@ pub const MOVE_MIN_LONG_F: [&str; 10] = [
 /// throbber.success("calculation successful".to_string());
 /// throbber.end();
 /// ```
-
 pub struct Throbber {
     anim: Option<ThrobberAnim>,
     message: String,
