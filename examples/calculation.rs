@@ -3,17 +3,15 @@ use std::time::Duration;
 use throbber::Throbber;
 
 fn main() {
-    let mut throbber = Throbber::new().message("calculating stuff".to_string());
+    let mut throbber = Throbber::default().message("calculating stuff");
 
     throbber.start();
     // do stuff
     thread::sleep(Duration::from_secs(2));
-    throbber.success("Success".to_string());
+    throbber.success("Success");
 
-    throbber.start_with_msg("calculating more stuff".to_string());
+    throbber.start_with_msg("calculating more stuff");
     // do other stuff
     thread::sleep(Duration::from_secs(2));
-    throbber.fail("Fail".to_string());
-
-    throbber.end();
+    throbber.fail("Fail");
 }

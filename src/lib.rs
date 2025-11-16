@@ -13,103 +13,70 @@
 //!
 //! ```toml
 //! [dependencies]
-//! throbber = "0.1"
+//! throbber = "1.0"
 //! ```
 //!
-//! To display a throbber animation, first create a [`Throbber`](Throbber) object:
+//! To display a throbber animation, first create a [`Throbber`] object:
 //!
 //! ```rust
-//! # use throbber::Throbber;
-//! let mut throbber = Throbber::new();
+//! use throbber::Throbber;
+//! let mut throbber = Throbber::default();
 //! ```
 //!
 //! You can also customize certain settings like the displayed animation and the displayed message:
 //!
 //! ```rust
 //! # use throbber::Throbber;
-//! let mut throbber = Throbber::new()
-//!     .message("calculating stuff".to_string())
+//! let mut throbber = Throbber::default()
+//!     .message("calculating stuff")
 //!     .frames(&throbber::MOVE_EQ_F); // this crate comes with a few predefined animations
 //!                                    // see the Constants section
 //! ```
 //!
-//! Then you can simply call [`start`](Throbber::start) wherever you want to start the animation and a *finish function* like [`success`](Throbber::success) where you want to stop it.
+//! Then you can simply call [`start`] wherever you want to start the animation and a _finish function_ like [`success`] where you want to stop it.
 //!
 //! ```rust
 //! # use throbber::Throbber;
-//! # let mut throbber = Throbber::new();
+//! # let mut throbber = Throbber::default();
 //! throbber.start();
 //! // do calculations
-//! throbber.success("calculations successful!".to_string());
+//! throbber.success("calculations successful!");
 //! ```
 //!
-//! After which you can call [`start`](Throbber::start) or [`start_with_msg`](Throbber::start_with_msg) again to start the animation again.
-//! You can also change everything you could customize during the Throbber object creation, e. g. with [`change_message`](Throbber::change_message) and [`change_frames`](Throbber::change_frames). This also works while an animation is running.
+//! After, you can call [`start`] or [`start_with_msg`] again to start the animation again.
+//! Setters are also provided, e.g. [`set_message`] and [`set_frames`]. This also works while an animation is running.
 //!
-//! If you don't intend to start another animation, you should drop the Throbber object with [`end`](Throbber::end). This action also ends the underlying thread:
+//! ## Thread Lifetime
+//!
+//! The Throbber thread gets spawned on the first call to [`start`] or [`start_with_msg`]. After that, the thread only ever gets parked.
+//! If you want to end the thread, you must drop the Throbber object:
 //!
 //! ```rust
 //! # use throbber::Throbber;
-//! # let mut throbber = Throbber::new();
-//! throbber.end();
+//! # let mut throbber = Throbber::default();
+//! drop(throbber);
 //! ```
 //!
 //! # Examples
 //!
-//! This is the example from the preview above:
+//! This is the example from the gif above:
 //!
 //! ```rust
-//! use std::thread;
-//! use std::time::Duration;
-//! use throbber::Throbber;
-//!
-//! fn main() {
-//!     let mut throbber = Throbber::new().message("calculating stuff".to_string());
-//!
-//!     throbber.start();
-//!     // do stuff
-//!     thread::sleep(Duration::from_secs(2));
-//!     throbber.success("Success".to_string());
-//!
-//!     throbber.start_with_msg("calculating more stuff".to_string());
-//!     // do other stuff
-//!     thread::sleep(Duration::from_secs(2));
-//!     throbber.fail("Fail".to_string());
-//!
-//!     throbber.end();
-//! }
+#![doc = include_str!("../examples/calculation.rs")]
 //! ```
 //!
-//! You can also keep track of progress with [`change_message`](Throbber::change_message):
+//! You can also keep track of progress with [`set_message`]:
 //!
 //! ```rust
-//! use std::thread;
-//! use std::time::Duration;
-//! use throbber::Throbber;
-//!
-//! fn main() {
-//!     let mut throbber = Throbber::new()
-//!         .message("Downloading file1 0%".to_string())
-//!         .frames(&throbber::ROTATE_F)
-//!         .interval(Duration::from_millis(100));
-//!
-//!     throbber.start();
-//!     for i in 0..100 {
-//!         throbber.change_message(format!("Downloading file1 {}%", i));
-//!         thread::sleep(Duration::from_millis(30));
-//!     }
-//!     throbber.success("Downloaded file1".to_string());
-//!
-//!     throbber.start_with_msg("Downloading file2 0%".to_string());
-//!     for i in 0..69 {
-//!         throbber.change_message(format!("Downloading file2 {}%", i));
-//!         thread::sleep(Duration::from_millis(30));
-//!     }
-//!     throbber.fail("Download of file2 failed".to_string());
-//!
-//!     throbber.end();
-//! }
+#![doc = include_str!("../examples/download.rs")]
 //! ```
+//!
+//! [`Throbber`]: Throbber
+//! [`start`]: Throbber::start
+//! [`start_with_msg`]: Throbber::start_with_msg
+//! [`set_message`]: Throbber::set_message
+//! [`set_frames`]: Throbber::set_frames
+//! [`success`]: Throbber::success
 
 use std::io::Write;
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
@@ -117,8 +84,6 @@ use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
 /// `⠋   ⠙   ⠹   ⠸   ⠼   ⠴   ⠦   ⠧   ⠇   ⠏`
-///
-/// This is the default animation when creating a new Throbber object.
 pub const DEFAULT_F: [&str; 10] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 /// `◐   ◓   ◑   ◒`
 pub const CIRCLE_F: [&str; 4] = ["◐", "◓", "◑", "◒"];
@@ -128,40 +93,41 @@ pub const ROTATE_F: [&str; 4] = ["|", "/", "-", "\\"];
 pub const MOVE_EQ_F: [&str; 4] = ["[=  ]", "[ = ]", "[  =]", "[ = ]"];
 /// `[-  ]   [ - ]   [  -]   [ - ]`
 pub const MOVE_MIN_F: [&str; 4] = ["[-  ]", "[ - ]", "[  -]", "[ - ]"];
-/// `[=    ]   [==   ]   [ ==  ]   [  == ]   [   ==]   [    =]`
+/// `[=    ]   [==   ]   [ ==  ]   [  == ]   [   ==]   [    =]   [   ==]   [  == ]   [ ==  ]   [==   ]`
 pub const MOVE_EQ_LONG_F: [&str; 10] = [
     "[=    ]", "[==   ]", "[ ==  ]", "[  == ]", "[   ==]", "[    =]", "[   ==]", "[  == ]",
     "[ ==  ]", "[==   ]",
 ];
-/// `[-    ]   [--   ]   [ --  ]   [  -- ]   [   --]   [    -]`
+/// `[-    ]   [--   ]   [ --  ]   [  -- ]   [   --]   [    -]   [   --]   [  -- ]   [ --  ]   [--   ]`
 pub const MOVE_MIN_LONG_F: [&str; 10] = [
     "[-    ]", "[--   ]", "[ --  ]", "[  -- ]", "[   --]", "[    -]", "[   --]", "[  -- ]",
     "[ --  ]", "[--   ]",
 ];
 
-/// Representation of a throbber animation. It can start, succeed, fail or end at any point.
+/// Representation of a throbber animation. It can start, succeed, fail or finish at any point.
 ///
-/// Note that a call to [`end`](Throbber::end) takes ownership of the struct and drops it, as such it should be called to completely remove the throbber animtion object. If you want to start another animation afterwards, you have to create a new [`Throbber`](Throbber) object. This is done because multiple calls to start do not actually create multiple threads, instead a call to a *finish function* (like [`success`](Throbber::success)) simply parks the thread and a following [`start`](Throbber::start) call unparks that thread again. As such, a call to [`end`](Throbber::end) kills the thread entirely. If you want to just stop the animation, but potentially start it again later on, use [`finish`](Throbber::finish) instead.
+/// Note that the Throbber thread gets spawned on the first call to [`start`](Throbber::start) or [`start_with_msg`](Throbber::start_with_msg). After that, the thread only ever gets parked.
+/// If you want to end the thread, you must drop the Throbber object.
 ///
 /// # Examples
 ///
 /// ```rust
-/// use throbber::Throbber;
 /// use std::thread;
 /// use std::time::Duration;
+/// use throbber::Throbber;
 ///
-/// let mut throbber = Throbber::new()
-///     .message("calculating stuff".to_string())
-///     .interval(Duration::from_millis(50))
-///     .frames(&throbber::ROTATE_F);
+/// let mut throbber = Throbber::new(
+///     "calculating stuff",
+///     Duration::from_millis(50),
+///     &throbber::ROTATE_F,
+/// );
 ///
 /// throbber.start();
 ///
 /// // do stuff
 /// thread::sleep(Duration::from_secs(5));
 ///
-/// throbber.success("calculation successful".to_string());
-/// throbber.end();
+/// throbber.success("calculation successful");
 /// ```
 pub struct Throbber {
     anim: Option<ThrobberAnim>,
@@ -186,82 +152,96 @@ enum ThrobberSignal {
     End,
 }
 
-impl Throbber {
-    /// Creates a new Throbber object.
-    ///
+impl Default for Throbber {
     /// # Default Values
     ///
-    /// If you do not customize your throbber animation with [`message`](Throbber::message) etc., these are the default values:
-    ///
-    /// * message: `""`
-    /// * interval: `Duration::from_millis(200)`
-    /// * frames: `DEFAULT_F (⠋   ⠙   ⠹   ⠸   ⠼   ⠴   ⠦   ⠧   ⠇   ⠏)`
-    pub fn new() -> Self {
+    /// - message: `""`
+    /// - interval: `Duration::from_millis(200)`
+    /// - frames: `DEFAULT_F (⠋   ⠙   ⠹   ⠸   ⠼   ⠴   ⠦   ⠧   ⠇   ⠏)`
+    fn default() -> Self {
         Self {
             anim: None,
-            message: "".to_string(),
+            message: "".to_owned(),
             interval: Duration::from_millis(200),
             frames: &DEFAULT_F,
         }
     }
+}
 
-    /// Sets the message that's supposed to print.
-    ///
-    /// This does nothing if [`start`](Throbber::start) was called before. To change the message after [`start`](Throbber::start) was called, use [`change_message`](Throbber::change_message) instead.
-    pub fn message(mut self, msg: String) -> Self {
-        self.message = msg;
+impl Drop for Throbber {
+    fn drop(&mut self) {
+        if let Some(anim) = self.anim.take() {
+            anim.sender.send(ThrobberSignal::End).unwrap();
+            anim.thread.thread().unpark();
+            anim.thread.join().unwrap();
+        }
+    }
+}
+
+impl Throbber {
+    /// Creates a new Throbber object.
+    pub fn new<S: Into<String>>(
+        message: S,
+        interval: Duration,
+        frames: &'static [&'static str],
+    ) -> Self {
+        Self {
+            anim: None,
+            message: message.into(),
+            interval,
+            frames,
+        }
+    }
+
+    /// Sets the message displayed next to the throbber.
+    pub fn message<S: Into<String>>(mut self, msg: S) -> Self {
+        self.set_message(msg);
         self
     }
 
-    /// Sets the interval in which the animation frames are supposed to print.
-    ///
-    /// This does nothing if [`start`](Throbber::start) was called before. To change the interval after [`start`](Throbber::start) was called, use [`change_interval`](Throbber::change_interval) instead.
-    pub fn interval(mut self, interval: Duration) -> Self {
-        self.interval = interval;
-        self
-    }
-
-    /// Sets the animation frames that are supposed to print.
-    ///
-    /// This does nothing if [`start`](Throbber::start) was called before. To change the animation frames after [`start`](Throbber::start) was called, use [`change_frames`](Throbber::change_frames) instead.
-    pub fn frames(mut self, frames: &'static [&'static str]) -> Self {
-        self.frames = frames;
-        self
-    }
-
-    /// Changes the message that's supposed to print.toml
-    ///
-    /// Unlike [`message`](Throbber::message), this will work both before and after [`start`](Throbber::start) was called.
-    pub fn change_message(&mut self, msg: String) {
+    /// Sets the message displayed next to the throbber.
+    pub fn set_message<S: Into<String>>(&mut self, msg: S) {
+        self.message = msg.into();
         if let Some(ref anim) = self.anim {
             anim.sender
-                .send(ThrobberSignal::ChMsg(msg.clone()))
+                .send(ThrobberSignal::ChMsg(self.message.clone()))
                 .unwrap();
             anim.thread.thread().unpark();
         }
-        self.message = msg;
     }
 
-    /// Changes the interval in which the animation frames are supposed to print.
-    ///
-    /// Unlike [`interval`](Throbber::interval), this will work both before and after [`start`](Throbber::start) was called.
-    pub fn change_interval(&mut self, interval: Duration) {
-        if let Some(ref anim) = self.anim {
-            anim.sender.send(ThrobberSignal::ChInt(interval)).unwrap();
-            anim.thread.thread().unpark();
-        }
-        self.interval = interval;
+    /// Sets the animation frame interval, i.e. the time between frames.
+    pub fn interval<D: Into<Duration>>(mut self, interval: D) -> Self {
+        self.set_interval(interval);
+        self
     }
 
-    /// Changes the animation frames that are supposed to print.
-    ///
-    /// Unlike [`frames`](Throbber::frames), this will work both before and after [`start`](Throbber::start) was called.
-    pub fn change_frames(&mut self, frames: &'static [&'static str]) {
+    /// Sets the animation frame interval, i.e. the time between frames.
+    pub fn set_interval<D: Into<Duration>>(&mut self, interval: D) {
+        self.interval = interval.into();
         if let Some(ref anim) = self.anim {
-            anim.sender.send(ThrobberSignal::ChFrames(frames)).unwrap();
+            anim.sender
+                .send(ThrobberSignal::ChInt(self.interval))
+                .unwrap();
             anim.thread.thread().unpark();
         }
-        self.frames = frames;
+    }
+
+    /// Sets the animation frames.
+    pub fn frames(mut self, frames: &'static [&'static str]) -> Self {
+        self.set_frames(frames);
+        self
+    }
+
+    /// Sets the animation frames.
+    pub fn set_frames(&mut self, frames: &'static [&'static str]) {
+        self.frames = frames.into();
+        if let Some(ref anim) = self.anim {
+            anim.sender
+                .send(ThrobberSignal::ChFrames(self.frames))
+                .unwrap();
+            anim.thread.thread().unpark();
+        }
     }
 
     /// Starts the animation.
@@ -278,18 +258,18 @@ impl Throbber {
             mpsc::channel();
 
         let msg = self.message.clone();
-        let frames = self.frames;
         let interval = self.interval;
-        let thread = thread::spawn(move || animation_thread(receiver, msg, frames, interval));
+        let frames = self.frames;
+        let thread = thread::spawn(move || animation_thread(receiver, msg, interval, frames));
 
         self.anim = Some(ThrobberAnim { thread, sender });
     }
 
     /// Starts the animation with the specified `msg`.
     ///
-    /// Equivalent to `throbber.change_message(msg); throbber.start();`.
-    pub fn start_with_msg(&mut self, msg: String) {
-        self.change_message(msg);
+    /// Equivalent to `throbber.set_message(msg); throbber.start();`.
+    pub fn start_with_msg<S: Into<String>>(&mut self, msg: S) {
+        self.set_message(msg);
         self.start();
     }
 
@@ -301,20 +281,21 @@ impl Throbber {
         }
     }
 
-    /// Stops the current animation and prints `msg` as a *success message*.
-    pub fn success(&mut self, msg: String) {
+    /// Stops the current animation and prints `msg` as a *success message* (`✔`).
+    pub fn success<'a, S: Into<String> + std::fmt::Display>(&mut self, msg: S) {
         if let Some(ref anim) = self.anim {
-            anim.sender.send(ThrobberSignal::Succ(msg)).unwrap();
+            anim.sender.send(ThrobberSignal::Succ(msg.into())).unwrap();
             anim.thread.thread().unpark();
         } else {
             println!("\x1B[2K\r✔ {}", msg);
         }
     }
 
-    /// Stops the current animation and prints `msg` as a *fail message*.
+    /// Stops the current animation and prints `msg` as a *fail message* (`✖`).
     ///
-    /// This does currently **not** print the fail message onto stderr, but stdout instead. That might change in a future version.
-    pub fn fail(&mut self, msg: String) {
+    /// This still prints to stdout, *not* stderr.
+    pub fn fail<'a, S: Into<String>>(&mut self, msg: S) {
+        let msg = msg.into();
         if let Some(ref anim) = self.anim {
             anim.sender.send(ThrobberSignal::Fail(msg)).unwrap();
             anim.thread.thread().unpark();
@@ -322,22 +303,13 @@ impl Throbber {
             println!("\x1B[2K\r✖ {}", msg);
         }
     }
-
-    /// Ends the animation thread and drops the throbber object. If you want to stop the animation without dropping the throbber object, use [`finish`](Throbber::finish) instead.
-    pub fn end(mut self) {
-        if let Some(anim) = self.anim.take() {
-            anim.sender.send(ThrobberSignal::End).unwrap();
-            anim.thread.thread().unpark();
-            anim.thread.join().unwrap();
-        }
-    }
 }
 
-fn animation_thread(
+fn animation_thread<'a>(
     receiver: Receiver<ThrobberSignal>,
     mut msg: String,
-    mut frames: &'static [&'static str],
     mut interval: Duration,
+    mut frames: &'static [&'static str],
 ) {
     let mut play_anim = true;
     let mut frame = 0;
