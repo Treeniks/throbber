@@ -235,7 +235,7 @@ impl Throbber {
 
     /// Sets the animation frames.
     pub fn set_frames(&mut self, frames: &'static [&'static str]) {
-        self.frames = frames.into();
+        self.frames = frames;
         if let Some(ref anim) = self.anim {
             anim.sender
                 .send(ThrobberSignal::ChFrames(self.frames))
@@ -360,7 +360,7 @@ fn animation_thread(
                 break;
             }
             Err(TryRecvError::Empty) => {
-                if play_anim == false {
+                if !play_anim {
                     thread::park();
                     continue;
                 }
