@@ -282,7 +282,7 @@ impl Throbber {
     }
 
     /// Stops the current animation and prints `msg` as a *success message* (`✔`).
-    pub fn success<'a, S: Into<String> + std::fmt::Display>(&mut self, msg: S) {
+    pub fn success<S: Into<String> + std::fmt::Display>(&mut self, msg: S) {
         if let Some(ref anim) = self.anim {
             anim.sender.send(ThrobberSignal::Succ(msg.into())).unwrap();
             anim.thread.thread().unpark();
@@ -294,7 +294,7 @@ impl Throbber {
     /// Stops the current animation and prints `msg` as a *fail message* (`✖`).
     ///
     /// This still prints to stdout, *not* stderr.
-    pub fn fail<'a, S: Into<String>>(&mut self, msg: S) {
+    pub fn fail<S: Into<String>>(&mut self, msg: S) {
         let msg = msg.into();
         if let Some(ref anim) = self.anim {
             anim.sender.send(ThrobberSignal::Fail(msg)).unwrap();
@@ -305,7 +305,7 @@ impl Throbber {
     }
 }
 
-fn animation_thread<'a>(
+fn animation_thread(
     receiver: Receiver<ThrobberSignal>,
     mut msg: String,
     mut interval: Duration,
