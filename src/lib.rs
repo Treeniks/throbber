@@ -282,9 +282,10 @@ impl Throbber {
     }
 
     /// Stops the current animation and prints `msg` as a *success message* (`✔`).
-    pub fn success<S: Into<String> + std::fmt::Display>(&mut self, msg: S) {
+    pub fn success<S: Into<String>>(&mut self, msg: S) {
+        let msg = msg.into();
         if let Some(ref anim) = self.anim {
-            anim.sender.send(ThrobberSignal::Succ(msg.into())).unwrap();
+            anim.sender.send(ThrobberSignal::Succ(msg)).unwrap();
             anim.thread.thread().unpark();
         } else {
             println!("\x1B[2K\r✔ {}", msg);
